@@ -1,0 +1,8 @@
+allowed_roots:
+  - /Users/you/code
+allowed_commands:
+  - codex
+  # add more commands here as needed (e.g. git, gemini) for use with run_command
+timeout: 180s
+max_output_bytes: 200000
+# codex_extra_args: ["-c", "model=o3"]   # optional extra codex flags (e.g. config overrides)

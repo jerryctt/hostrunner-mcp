@@ -1,0 +1,48 @@
+version: 2
+
+project_name: hostrunner
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: hostrunner
+    main: ./cmd/hostrunner
+    binary: hostrunner
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - id: hostrunner
+    builds:
+      - hostrunner
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format: tar.gz
+    files:
+      - LICENSE
+      - README.md
+      - examples/config.example.yaml
+      - examples/claude_desktop_config.example.json
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
