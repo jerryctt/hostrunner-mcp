@@ -3,6 +3,7 @@ package codex
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/jerryctt/hostrunner-mcp/internal/exec"
@@ -53,7 +54,8 @@ func ReviewArgs(mode, base, commit string) ([]string, error) {
 
 // Review invokes `codex review` with the appropriate mode flag in p.Folder.
 // It does no git work itself; codex computes the diff.
-func Review(ctx context.Context, r Runner, codexCmd string, extraArgs []string, timeout time.Duration, maxBytes int, p ReviewParams) (ReviewResult, error) {
+// streamTo, if non-nil, receives live stdout+stderr in addition to the captured Result.
+func Review(ctx context.Context, r Runner, codexCmd string, extraArgs []string, timeout time.Duration, maxBytes int, streamTo io.Writer, p ReviewParams) (ReviewResult, error) {
 	args, err := ReviewArgs(p.Mode, p.Base, p.Commit)
 	if err != nil {
 		return ReviewResult{}, err
@@ -66,6 +68,7 @@ func Review(ctx context.Context, r Runner, codexCmd string, extraArgs []string, 
 		Dir:            p.Folder,
 		Timeout:        timeout,
 		MaxOutputBytes: maxBytes,
+		StreamTo:       streamTo,
 	})
 	if err != nil {
 		return ReviewResult{}, err

@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
 	"strings"
 
 	"github.com/jerryctt/hostrunner-mcp/internal/codex"
@@ -74,7 +76,11 @@ func HandleCodexReview(ctx context.Context, cfg *config.Config, r codex.Runner, 
 	if err != nil {
 		return err.Error(), true
 	}
-	res, err := codex.Review(ctx, r, "codex", cfg.CodexExtraArgs, cfg.Timeout, cfg.MaxOutputBytes, codex.ReviewParams{
+	var streamTo io.Writer
+	if cfg.StreamEnabled() {
+		streamTo = os.Stderr
+	}
+	res, err := codex.Review(ctx, r, "codex", cfg.CodexExtraArgs, cfg.Timeout, cfg.MaxOutputBytes, streamTo, codex.ReviewParams{
 		Folder: dir,
 		Mode:   mode,
 		Base:   base,
@@ -86,9 +92,12 @@ func HandleCodexReview(ctx context.Context, cfg *config.Config, r codex.Runner, 
 	}
 	log.Info().Str("tool", "codex_review").Str("folder", dir).Str("mode", mode).Dur("elapsed", res.Elapsed).Int("exit", res.ExitCode).Err(err).Msg("invocation")
 	var b strings.Builder
-	fmt.Fprintf(&b, "Mode: %s\n\n--- Codex review ---\n%s\n", res.Mode, res.Output)
-	if res.Stderr != "" {
-		fmt.Fprintf(&b, "\n--- stderr ---\n%s\n", res.Stderr)
+	fmt.Fprintf(&b, "Mode: %s (codex exit %d)\n\n--- Codex review ---\n%s\n", res.Mode, res.ExitCode, res.Output)
+	// codex's stderr is its verbose progress/exec trace; it is already streamed
+	// live to the desktop log (stream_output). Only surface it in the result when
+	// codex itself failed, as diagnostics.
+	if res.ExitCode != 0 && res.Stderr != "" {
+		fmt.Fprintf(&b, "\n--- codex stderr (exit %d) ---\n%s\n", res.ExitCode, res.Stderr)
 	}
 	if res.Truncated {
 		b.WriteString("\n[output truncated]\n")
@@ -104,8 +113,13 @@ func HandleRunCommand(ctx context.Context, cfg *config.Config, r codex.Runner, l
 	if err != nil {
 		return err.Error(), true
 	}
+	var streamTo io.Writer
+	if cfg.StreamEnabled() {
+		streamTo = os.Stderr
+	}
 	res, err := r.Run(ctx, exec.Request{
 		Command: command, Args: args, Dir: dir, Timeout: cfg.Timeout, MaxOutputBytes: cfg.MaxOutputBytes,
+		StreamTo: streamTo,
 	})
 	if err != nil {
 		log.Info().Str("tool", "run_command").Str("command", command).Str("folder", dir).Err(err).Msg("invocation")

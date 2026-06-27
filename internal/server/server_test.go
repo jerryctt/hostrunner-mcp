@@ -59,3 +59,43 @@ func TestHandleRunCommandHappyPath(t *testing.T) {
 		t.Errorf("expected success with output, got %q isErr=%v", out, isErr)
 	}
 }
+
+func TestHandleCodexReviewOmitsStderrOnSuccess(t *testing.T) {
+	cfg, repo := newCfg(t)
+	r := &fakeRunner{reply: map[string]exec.Result{
+		"codex review --uncommitted": {Stdout: "VERDICT_OK", Stderr: "NOISE_TRACE", ExitCode: 0},
+	}}
+	out, isErr := HandleCodexReview(context.Background(), cfg, r, zerolog.Nop(), repo, "uncommitted", "", "")
+	if isErr {
+		t.Fatalf("expected success, got error: %q", out)
+	}
+	if !strings.Contains(out, "VERDICT_OK") {
+		t.Errorf("expected output to contain VERDICT_OK, got: %q", out)
+	}
+	if !strings.Contains(out, "codex exit 0") {
+		t.Errorf("expected output to contain 'codex exit 0', got: %q", out)
+	}
+	if strings.Contains(out, "NOISE_TRACE") {
+		t.Errorf("expected output to NOT contain NOISE_TRACE, got: %q", out)
+	}
+	if strings.Contains(out, "--- codex stderr") {
+		t.Errorf("expected output to NOT contain '--- codex stderr', got: %q", out)
+	}
+}
+
+func TestHandleCodexReviewIncludesStderrOnFailure(t *testing.T) {
+	cfg, repo := newCfg(t)
+	r := &fakeRunner{reply: map[string]exec.Result{
+		"codex review --uncommitted": {Stdout: "partial", Stderr: "BOOM", ExitCode: 2},
+	}}
+	out, isErr := HandleCodexReview(context.Background(), cfg, r, zerolog.Nop(), repo, "uncommitted", "", "")
+	if isErr {
+		t.Fatalf("expected success (non-error tool result), got error: %q", out)
+	}
+	if !strings.Contains(out, "BOOM") {
+		t.Errorf("expected output to contain BOOM, got: %q", out)
+	}
+	if !strings.Contains(out, "codex exit 2") {
+		t.Errorf("expected output to contain 'codex exit 2', got: %q", out)
+	}
+}

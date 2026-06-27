@@ -1,6 +1,7 @@
 package exec
 
 import (
+	"bytes"
 	"context"
 	"strings"
 	"testing"
@@ -68,5 +69,24 @@ func TestRunTruncates(t *testing.T) {
 	}
 	if !r.Truncated || len(r.Stdout) != 4 || !strings.HasPrefix("abcdefghij", r.Stdout) {
 		t.Errorf("got %q truncated=%v", r.Stdout, r.Truncated)
+	}
+}
+
+func TestRunStreamsToWriter(t *testing.T) {
+	var stream bytes.Buffer
+	r, err := Run(context.Background(), Request{
+		Command:        "printf",
+		Args:           []string{"hello"},
+		StreamTo:       &stream,
+		MaxOutputBytes: 1000,
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if r.Stdout != "hello" {
+		t.Errorf("Result.Stdout = %q, want hello", r.Stdout)
+	}
+	if stream.String() != "hello" {
+		t.Errorf("stream buffer = %q, want hello", stream.String())
 	}
 }

@@ -118,6 +118,12 @@ max_output_bytes: 200000
 
 # 附加到每次 'codex review' 呼叫的選用額外旗標（例如模型覆寫設定）。
 # codex_extra_args: ["-c", "model=o3"]
+
+# 是否即時將 codex/指令輸出轉送至伺服器的 stderr（預設：true）。
+# Claude Desktop 會將此記錄到 ~/Library/Logs/Claude/mcp-server-hostrunner.log。
+# 啟用 stream_output（預設）後，codex 的即時輸出可在該日誌中查看。
+# 設為 false 可關閉此功能。
+stream_output: true
 ```
 
 ---

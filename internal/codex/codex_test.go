@@ -68,7 +68,7 @@ func TestReviewHappyPath(t *testing.T) {
 	f := &fakeRunner{reply: map[string]exec.Result{
 		"codex review --uncommitted": {Stdout: "LGTM", ExitCode: 0},
 	}}
-	res, err := Review(context.Background(), f, "codex", nil, 0, 1000, ReviewParams{
+	res, err := Review(context.Background(), f, "codex", nil, 0, 1000, nil, ReviewParams{
 		Folder: "/repo", Mode: "uncommitted",
 	})
 	if err != nil {
@@ -116,7 +116,7 @@ func TestReviewBaseMode(t *testing.T) {
 	f := &fakeRunner{reply: map[string]exec.Result{
 		"codex review --base main": {Stdout: "looks good", ExitCode: 0},
 	}}
-	res, err := Review(context.Background(), f, "codex", nil, 0, 1000, ReviewParams{
+	res, err := Review(context.Background(), f, "codex", nil, 0, 1000, nil, ReviewParams{
 		Folder: "/repo", Mode: "base", Base: "main",
 	})
 	if err != nil {
@@ -141,7 +141,7 @@ func TestReviewExtraArgs(t *testing.T) {
 	f := &fakeRunner{reply: map[string]exec.Result{
 		"codex review --uncommitted -c model=o3": {Stdout: "ok", ExitCode: 0},
 	}}
-	res, err := Review(context.Background(), f, "codex", []string{"-c", "model=o3"}, 0, 1000, ReviewParams{
+	res, err := Review(context.Background(), f, "codex", []string{"-c", "model=o3"}, 0, 1000, nil, ReviewParams{
 		Folder: "/repo", Mode: "uncommitted",
 	})
 	if err != nil {
@@ -156,7 +156,7 @@ func TestReviewModeEmptyLabel(t *testing.T) {
 	f := &fakeRunner{reply: map[string]exec.Result{
 		"codex review --uncommitted": {Stdout: "fine", ExitCode: 0},
 	}}
-	res, err := Review(context.Background(), f, "codex", nil, 0, 1000, ReviewParams{
+	res, err := Review(context.Background(), f, "codex", nil, 0, 1000, nil, ReviewParams{
 		Folder: "/repo", Mode: "",
 	})
 	if err != nil {

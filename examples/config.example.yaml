@@ -3,6 +3,7 @@ allowed_roots:
 allowed_commands:
   - codex
   # add more commands here as needed (e.g. git, gemini) for use with run_command
-timeout: 180s
+timeout: 600s
 max_output_bytes: 200000
 # codex_extra_args: ["-c", "model=o3"]   # optional extra codex flags (e.g. config overrides)
+stream_output: false   # tee codex output to the server log (mcp-server-hostrunner.log); set false to silence

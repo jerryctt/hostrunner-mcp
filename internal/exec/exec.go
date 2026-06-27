@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -18,6 +19,9 @@ type Request struct {
 	Timeout        time.Duration
 	// MaxOutputBytes caps combined stdout/stderr output; 0 means unlimited.
 	MaxOutputBytes int
+	// StreamTo, if non-nil, means stdout and stderr are also written here live,
+	// in addition to being captured in the Result.
+	StreamTo io.Writer
 }
 
 type Result struct {
@@ -45,8 +49,13 @@ func Run(ctx context.Context, req Request) (Result, error) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	var out, errb bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &errb
+	if req.StreamTo != nil {
+		cmd.Stdout = io.MultiWriter(&out, req.StreamTo)
+		cmd.Stderr = io.MultiWriter(&errb, req.StreamTo)
+	} else {
+		cmd.Stdout = &out
+		cmd.Stderr = &errb
+	}
 
 	start := time.Now()
 	if err := cmd.Start(); err != nil {

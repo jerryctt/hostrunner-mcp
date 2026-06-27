@@ -119,6 +119,12 @@ max_output_bytes: 200000
 
 # Optional extra flags appended to every 'codex review' call (e.g. config overrides).
 # codex_extra_args: ["-c", "model=o3"]
+
+# Whether to tee codex/command output to the server's stderr in real time (default: true).
+# Claude Desktop captures this in ~/Library/Logs/Claude/mcp-server-hostrunner.log.
+# With stream_output enabled (the default), codex's live output is visible in that log.
+# Set to false to silence it.
+stream_output: true
 ```
 
 ---

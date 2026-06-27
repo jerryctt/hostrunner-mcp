@@ -57,3 +57,27 @@ func TestResolveAllowedDir(t *testing.T) {
 		t.Errorf("sandbox path should fail")
 	}
 }
+
+func TestStreamOutputDefaultTrue(t *testing.T) {
+	root := t.TempDir()
+	p := writeTemp(t, "allowed_roots:\n  - "+root+"\n")
+	c, err := Load(p)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if !c.StreamEnabled() {
+		t.Errorf("StreamEnabled() = false, want true (default on)")
+	}
+}
+
+func TestStreamOutputExplicitFalse(t *testing.T) {
+	root := t.TempDir()
+	p := writeTemp(t, "allowed_roots:\n  - "+root+"\nstream_output: false\n")
+	c, err := Load(p)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if c.StreamEnabled() {
+		t.Errorf("StreamEnabled() = true, want false when stream_output: false")
+	}
+}

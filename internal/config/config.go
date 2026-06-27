@@ -16,6 +16,7 @@ type Config struct {
 	Timeout         time.Duration `yaml:"timeout"`
 	MaxOutputBytes  int           `yaml:"max_output_bytes"`
 	CodexExtraArgs  []string      `yaml:"codex_extra_args"`
+	StreamOutput    *bool         `yaml:"stream_output"`
 }
 
 func Load(path string) (*Config, error) {
@@ -32,6 +33,10 @@ func Load(path string) (*Config, error) {
 	}
 	if c.MaxOutputBytes == 0 {
 		c.MaxOutputBytes = 200000
+	}
+	if c.StreamOutput == nil {
+		v := true
+		c.StreamOutput = &v
 	}
 	if len(c.AllowedRoots) == 0 {
 		return nil, fmt.Errorf("allowed_roots must not be empty")
@@ -53,6 +58,10 @@ func (c *Config) CommandAllowed(name string) bool {
 		}
 	}
 	return false
+}
+
+func (c *Config) StreamEnabled() bool {
+	return c.StreamOutput != nil && *c.StreamOutput
 }
 
 func (c *Config) ResolveAllowedDir(dir string) (string, error) {

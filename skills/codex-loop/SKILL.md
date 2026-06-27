@@ -93,11 +93,12 @@ codex_review(
 
 ### Step 4 — Summarize and fix
 
-Parse the `--- Codex review ---` section. For each finding:
+The verdict is the text under `--- Codex review ---` in the tool result. **Make the next-step decision by reading that text — not by the exit code.** `codex review` always exits 0, even when it lists problems.
 
-- State the file and line range.
-- Describe the issue in one sentence.
-- Apply the fix using the Edit tool (or Read then Write for larger changes).
+- **If the verdict lists concrete issues or risks** → summarize them as a numbered list, apply fixes using the Edit tool (or Read then Write for larger changes), then re-review (Step 5).
+- **If the verdict says it found no issues, looks clean, or approves the changes** → STOP. Report to the user that the review is clean. Do not loop again.
+
+> **Note on the tool result:** the result contains only codex's verdict, not its progress/exec trace. The full live trace is in the desktop log `~/Library/Logs/Claude/mcp-server-hostrunner.log` (when `stream_output` is enabled, which is the default). If the result header shows a non-zero `codex exit N` (e.g. `Mode: uncommitted (codex exit 1)`), codex itself failed — a `--- codex stderr ---` section will be included. Treat that as a tool error to report to the user, not as review findings.
 
 ### Step 5 — Re-review
 
