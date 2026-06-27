@@ -104,11 +104,17 @@ make build          # 產出 ./hostrunner
 
 透過 Marketplace 安裝，可一次完成 MCP 伺服器（由隨附啟動程式自動啟動）與 `codex-loop` 技能的安裝。
 
-**前置條件 — 設定 `HOSTRUNNER_CONFIG`：** 啟動程式從此環境變數讀取設定檔路徑。請依照 `examples/config.example.yaml` 建立設定檔，並在啟動 Claude Desktop/Code 前設定此變數：
+**前置條件 — 建立設定檔：** 伺服器預設從 `~/.config/hostrunner/config.yaml` 讀取設定。請在啟動 Claude Desktop/Code 前依照 `examples/config.example.yaml` 建立設定檔：
 
 ```bash
-export HOSTRUNNER_CONFIG=~/.config/hostrunner/config.yaml
+mkdir -p ~/.config/hostrunner
+cp examples/config.example.yaml ~/.config/hostrunner/config.yaml
+# 編輯檔案，填入您自己的路徑
 ```
+
+您也可以透過 `-config` 旗標或 `HOSTRUNNER_CONFIG` 環境變數來覆寫設定檔路徑。
+
+> **macOS GUI 應用程式與環境變數：** macOS 不會將 Shell 的環境變數傳遞給 GUI 應用程式（如 Claude Desktop），因此在 `.zshrc` 或 `.bashrc` 中設定的 `HOSTRUNNER_CONFIG` 對從 Claude Desktop 啟動的外掛程式無效。請將設定檔放在預設路徑 `~/.config/hostrunner/config.yaml`，伺服器無需任何環境變數即可找到它。
 
 **macOS/Linux：** 隨附的 `bin/launch.sh` 啟動程式會在首次執行時下載符合目前作業系統與架構的發行版執行檔，並在執行前對照發行版的 `checksums.txt` 進行校驗碼驗證。無需手動安裝執行檔。
 
@@ -120,7 +126,19 @@ export HOSTRUNNER_CONFIG=~/.config/hostrunner/config.yaml
 
 ## 設定
 
-建立一個設定檔（例如 `~/.config/hostrunner/config.yaml`）。儲存庫提供 `examples/config.example.yaml` 作為範本 — **該檔案中的路徑為佔位範例，請改成您自己的路徑**。
+伺服器依以下順序解析設定檔路徑：
+1. 若提供了 `-config` 旗標，優先使用其指定的路徑。
+2. 若設定了 `HOSTRUNNER_CONFIG` 環境變數，使用其值。
+3. 預設路徑 `~/.config/hostrunner/config.yaml`。
+
+**建議：** 將設定檔放在 `~/.config/hostrunner/config.yaml`。在 macOS 上以外掛程式搭配 Claude Desktop 使用時，這點尤其重要——macOS GUI 應用程式不會繼承 Shell 的環境變數，因此在 Shell 設定檔中設定的 `HOSTRUNNER_CONFIG` 對從 Claude Desktop 啟動的伺服器無效。
+
+請從內附範本建立設定檔，**範本中的路徑為佔位符，請替換成您自己的路徑**：
+
+```bash
+mkdir -p ~/.config/hostrunner
+cp examples/config.example.yaml ~/.config/hostrunner/config.yaml
+```
 
 ```yaml
 # 工具允許存取的絕對 Host 路徑。

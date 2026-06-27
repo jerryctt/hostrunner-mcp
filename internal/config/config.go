@@ -10,6 +10,26 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// ResolvePath decides which config file to load, in priority order:
+//  1. an explicit path (e.g. from the -config flag), if non-empty
+//  2. the HOSTRUNNER_CONFIG environment variable, if set
+//  3. the default ~/.config/hostrunner/config.yaml
+//
+// Returns "" only if no explicit path / env is given and the home dir is unknown.
+func ResolvePath(explicit string) string {
+	if explicit != "" {
+		return explicit
+	}
+	if env := os.Getenv("HOSTRUNNER_CONFIG"); env != "" {
+		return env
+	}
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return ""
+	}
+	return filepath.Join(home, ".config", "hostrunner", "config.yaml")
+}
+
 type Config struct {
 	AllowedRoots    []string      `yaml:"allowed_roots"`
 	AllowedCommands []string      `yaml:"allowed_commands"`

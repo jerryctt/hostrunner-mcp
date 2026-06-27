@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -80,4 +81,34 @@ func TestStreamOutputExplicitFalse(t *testing.T) {
 	if c.StreamEnabled() {
 		t.Errorf("StreamEnabled() = true, want false when stream_output: false")
 	}
+}
+
+func TestResolvePath(t *testing.T) {
+	t.Run("explicit non-empty returns it", func(t *testing.T) {
+		got := ResolvePath("/x/y.yaml")
+		if got != "/x/y.yaml" {
+			t.Fatalf("expected /x/y.yaml, got %q", got)
+		}
+	})
+
+	t.Run("explicit empty + env set returns env", func(t *testing.T) {
+		t.Setenv("HOSTRUNNER_CONFIG", "/from/env.yaml")
+		got := ResolvePath("")
+		if got != "/from/env.yaml" {
+			t.Fatalf("expected /from/env.yaml, got %q", got)
+		}
+	})
+
+	t.Run("explicit empty + env empty returns default path", func(t *testing.T) {
+		t.Setenv("HOSTRUNNER_CONFIG", "")
+		got := ResolvePath("")
+		home, err := os.UserHomeDir()
+		if err != nil || home == "" {
+			t.Skip("os.UserHomeDir() unavailable; skipping default path check")
+		}
+		want := filepath.Join(".config", "hostrunner", "config.yaml")
+		if !strings.HasSuffix(got, want) {
+			t.Fatalf("expected path ending in %q, got %q", want, got)
+		}
+	})
 }

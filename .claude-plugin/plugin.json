@@ -1,6 +1,6 @@
 {
   "name": "hostrunner",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Read-only codex reviews and allowlisted host commands from Claude — bridges the Claude sandbox to your host codex CLI for an edit -> review -> edit loop.",
   "author": { "name": "Jerry Chan", "email": "jerrycttdev@gmail.com" },
   "keywords": ["codex", "code-review", "mcp", "host", "edit-review-loop"]

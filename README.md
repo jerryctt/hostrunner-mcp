@@ -104,11 +104,17 @@ Then install the `hostrunner` plugin from the listing.
 
 Installing via the marketplace installs both the MCP server (auto-started by the bundled launcher) and the `codex-loop` skill in one step.
 
-**Prerequisite — set `HOSTRUNNER_CONFIG`:** the launcher reads your config path from this environment variable. Create a config file from `examples/config.example.yaml` and set the variable before starting Claude Desktop/Code:
+**Prerequisite — create a config file:** the server looks for its config at `~/.config/hostrunner/config.yaml` by default. Create it from `examples/config.example.yaml` before starting Claude Desktop/Code:
 
 ```bash
-export HOSTRUNNER_CONFIG=~/.config/hostrunner/config.yaml
+mkdir -p ~/.config/hostrunner
+cp examples/config.example.yaml ~/.config/hostrunner/config.yaml
+# edit the file to match your paths
 ```
+
+You can override the config path with the `-config` flag or the `HOSTRUNNER_CONFIG` environment variable.
+
+> **macOS GUI apps and environment variables:** because macOS does not pass shell environment variables to GUI apps like Claude Desktop, setting `HOSTRUNNER_CONFIG` in your shell profile (`.zshrc`, `.bashrc`, etc.) has no effect when the plugin is launched from Claude Desktop. Place your config at the default path `~/.config/hostrunner/config.yaml` — the binary will find it without any environment variable.
 
 **macOS/Linux:** the bundled `bin/launch.sh` launcher downloads the matching release binary on first run and verifies it against the release `checksums.txt` before executing it. No manual binary install needed.
 
@@ -120,7 +126,19 @@ export HOSTRUNNER_CONFIG=~/.config/hostrunner/config.yaml
 
 ## Configuration
 
-Create a config file (e.g. `~/.config/hostrunner/config.yaml`). The repository ships `examples/config.example.yaml` as a starting point — **the paths in it are placeholders; change them to match your own setup**.
+The server resolves its config file in this order:
+1. The path given by the `-config` flag, if provided.
+2. The `HOSTRUNNER_CONFIG` environment variable, if set.
+3. The default `~/.config/hostrunner/config.yaml`.
+
+**Recommended:** place your config at `~/.config/hostrunner/config.yaml`. This is especially important when using the plugin with Claude Desktop on macOS, because GUI apps do not inherit shell environment variables — `HOSTRUNNER_CONFIG` set in your shell profile will not be visible to the server when launched from Claude Desktop.
+
+Create a config file from the provided example — **the paths in it are placeholders; change them to match your own setup**:
+
+```bash
+mkdir -p ~/.config/hostrunner
+cp examples/config.example.yaml ~/.config/hostrunner/config.yaml
+```
 
 ```yaml
 # Absolute host paths that tools are allowed to access.

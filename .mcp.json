@@ -2,7 +2,7 @@
   "mcpServers": {
     "hostrunner": {
       "command": "${CLAUDE_PLUGIN_ROOT}/bin/launch.sh",
-      "args": ["-config", "${HOSTRUNNER_CONFIG}"]
+      "args": []
     }
   }
 }

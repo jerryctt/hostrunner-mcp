@@ -16,7 +16,7 @@ var version = "dev"
 
 func main() {
 	showVersion := flag.Bool("version", false, "print version and exit")
-	cfgPath := flag.String("config", os.Getenv("HOSTRUNNER_CONFIG"), "path to config.yaml")
+	cfgFlag := flag.String("config", "", "path to config.yaml (default: ~/.config/hostrunner/config.yaml, or set HOSTRUNNER_CONFIG)")
 	flag.Parse()
 
 	if *showVersion {
@@ -26,12 +26,13 @@ func main() {
 
 	log := zerolog.New(os.Stderr).With().Timestamp().Logger()
 
-	if *cfgPath == "" {
-		log.Fatal().Msg("missing -config (or HOSTRUNNER_CONFIG)")
+	cfgPath := config.ResolvePath(*cfgFlag)
+	if cfgPath == "" {
+		log.Fatal().Msg("cannot determine config path; pass -config or set HOSTRUNNER_CONFIG")
 	}
-	cfg, err := config.Load(*cfgPath)
+	cfg, err := config.Load(cfgPath)
 	if err != nil {
-		log.Fatal().Err(err).Msg("load config")
+		log.Fatal().Err(err).Str("path", cfgPath).Msg("load config (create it from examples/config.example.yaml, or set HOSTRUNNER_CONFIG / -config)")
 	}
 
 	s := internalserver.New(cfg, exec.Runner{}, log)
