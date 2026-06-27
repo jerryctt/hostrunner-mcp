@@ -1,0 +1,11 @@
+{
+  "name": "hostrunner-marketplace",
+  "owner": { "name": "Jerry Chan" },
+  "plugins": [
+    {
+      "name": "hostrunner",
+      "source": ".",
+      "description": "codex review bridge: read-only codex reviews on your host from Claude, plus the codex-loop skill."
+    }
+  ]
+}

@@ -92,6 +92,30 @@ cd hostrunner-mcp
 make build          # 產出 ./hostrunner
 ```
 
+### 方式四：以 Claude 外掛程式安裝（Marketplace）
+
+**在 Claude Desktop 中：** 前往「新增 Marketplace」→ 輸入 `jerryctt/hostrunner-mcp`，再安裝 **hostrunner** 外掛程式。
+
+**在 Claude Code 中：**
+```
+/plugin marketplace add jerryctt/hostrunner-mcp
+```
+從清單中安裝 `hostrunner` 外掛程式。
+
+透過 Marketplace 安裝，可一次完成 MCP 伺服器（由隨附啟動程式自動啟動）與 `codex-loop` 技能的安裝。
+
+**前置條件 — 設定 `HOSTRUNNER_CONFIG`：** 啟動程式從此環境變數讀取設定檔路徑。請依照 `examples/config.example.yaml` 建立設定檔，並在啟動 Claude Desktop/Code 前設定此變數：
+
+```bash
+export HOSTRUNNER_CONFIG=~/.config/hostrunner/config.yaml
+```
+
+**macOS/Linux：** 隨附的 `bin/launch.sh` 啟動程式會在首次執行時下載符合目前作業系統與架構的發行版執行檔，並在執行前對照發行版的 `checksums.txt` 進行校驗碼驗證。無需手動安裝執行檔。
+
+**Windows：** 啟動程式不支援 Windows。請手動安裝執行檔（方式二），並依「向 Claude Desktop 註冊」章節所述，透過 `claude_desktop_config.json` 進行設定。
+
+> **信任說明：** 啟動程式會從 GitHub Releases 下載並執行執行檔，並以發行版的校驗碼進行驗證。若有疑慮，請檢閱 `bin/launch.sh` 的原始碼。
+
 ---
 
 ## 設定

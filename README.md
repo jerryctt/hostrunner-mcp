@@ -92,6 +92,30 @@ cd hostrunner-mcp
 make build          # produces ./hostrunner
 ```
 
+### Option 4: Install as a Claude plugin (marketplace)
+
+**In Claude Desktop:** go to Add marketplace → enter `jerryctt/hostrunner-mcp`, then install the **hostrunner** plugin.
+
+**In Claude Code:**
+```
+/plugin marketplace add jerryctt/hostrunner-mcp
+```
+Then install the `hostrunner` plugin from the listing.
+
+Installing via the marketplace installs both the MCP server (auto-started by the bundled launcher) and the `codex-loop` skill in one step.
+
+**Prerequisite — set `HOSTRUNNER_CONFIG`:** the launcher reads your config path from this environment variable. Create a config file from `examples/config.example.yaml` and set the variable before starting Claude Desktop/Code:
+
+```bash
+export HOSTRUNNER_CONFIG=~/.config/hostrunner/config.yaml
+```
+
+**macOS/Linux:** the bundled `bin/launch.sh` launcher downloads the matching release binary on first run and verifies it against the release `checksums.txt` before executing it. No manual binary install needed.
+
+**Windows:** the launcher is not supported on Windows. Install the binary manually (Option 2 above) and register it via `claude_desktop_config.json` as described in the "Register with Claude Desktop" section.
+
+> **Trust note:** the launcher downloads and runs a binary from GitHub Releases, checksum-verified against the release. Review the source at `bin/launch.sh` if you have concerns.
+
 ---
 
 ## Configuration

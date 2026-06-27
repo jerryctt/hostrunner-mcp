@@ -7,7 +7,6 @@ import (
 	"io"
 	"os/exec"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -46,7 +45,7 @@ func Run(ctx context.Context, req Request) (Result, error) {
 	if req.Stdin != "" {
 		cmd.Stdin = strings.NewReader(req.Stdin)
 	}
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	setSysProcAttr(cmd)
 
 	var out, errb bytes.Buffer
 	if req.StreamTo != nil {
@@ -68,7 +67,7 @@ func Run(ctx context.Context, req Request) (Result, error) {
 	var res Result
 	select {
 	case <-ctx.Done():
-		_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		killProcessGroup(cmd)
 		<-done
 		res.TimedOut = true
 	case err := <-done:

@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/jerryctt/hostrunner-mcp/internal/config"
@@ -11,9 +12,17 @@ import (
 	"github.com/rs/zerolog"
 )
 
+var version = "dev"
+
 func main() {
+	showVersion := flag.Bool("version", false, "print version and exit")
 	cfgPath := flag.String("config", os.Getenv("HOSTRUNNER_CONFIG"), "path to config.yaml")
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println(version)
+		return
+	}
 
 	log := zerolog.New(os.Stderr).With().Timestamp().Logger()
 
