@@ -5,7 +5,7 @@
     {
       "name": "hostrunner",
       "source": "./",
-      "description": "codex review bridge: read-only codex reviews on your host from Claude, plus the codex-loop skill."
+      "description": "Local MCP server + Claude plugin for read-only Codex code reviews on your machine — an edit → review → edit loop, bridging the Claude sandbox to your host codex CLI."
     }
   ]
 }

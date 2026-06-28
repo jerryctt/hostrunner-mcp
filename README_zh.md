@@ -5,7 +5,7 @@
 [![CI](https://github.com/jerryctt/hostrunner-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/jerryctt/hostrunner-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-一個以 stdio 協定運作的 MCP 伺服器，以**原生 Host 行程**執行——讓 Claude Cowork 在沙箱環境中也能存取 Host 機器上的 `codex` CLI 和檔案系統。
+本機 MCP 伺服器 + Claude plugin,在你的機器上執行唯讀的 Codex 程式碼審查 —— 把 Claude 沙箱橋接到 Host 的 codex CLI,達成邊改邊審的迴圈。
 
 ---
 

@@ -5,7 +5,7 @@ English | [繁體中文](README_zh.md)
 [![CI](https://github.com/jerryctt/hostrunner-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/jerryctt/hostrunner-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A stdio MCP server that runs as a **native host process** — giving Claude Cowork access to your host machine's `codex` CLI, git, and filesystem from inside its sandboxed editing environment.
+Local MCP server + Claude plugin for read-only Codex code reviews on your machine — an edit → review → edit loop, bridging the Claude sandbox to your host codex CLI.
 
 ---
 
