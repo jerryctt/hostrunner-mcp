@@ -36,7 +36,7 @@ func newCfg(t *testing.T) (*config.Config, string) {
 func TestHandleCodexReviewRejectsOutsideRoot(t *testing.T) {
 	cfg, _ := newCfg(t)
 	r := &fakeRunner{}
-	out, isErr := HandleCodexReview(context.Background(), cfg, r, zerolog.Nop(), "/etc", "uncommitted", "", "")
+	out, isErr := HandleCodexReview(context.Background(), cfg, r, zerolog.Nop(), "/etc", "uncommitted", "", "", "")
 	if !isErr || !strings.Contains(out, "allowed_root") {
 		t.Errorf("expected allowlist rejection, got %q isErr=%v", out, isErr)
 	}
@@ -65,7 +65,7 @@ func TestHandleCodexReviewOmitsStderrOnSuccess(t *testing.T) {
 	r := &fakeRunner{reply: map[string]exec.Result{
 		"codex review --uncommitted": {Stdout: "VERDICT_OK", Stderr: "NOISE_TRACE", ExitCode: 0},
 	}}
-	out, isErr := HandleCodexReview(context.Background(), cfg, r, zerolog.Nop(), repo, "uncommitted", "", "")
+	out, isErr := HandleCodexReview(context.Background(), cfg, r, zerolog.Nop(), repo, "uncommitted", "", "", "")
 	if isErr {
 		t.Fatalf("expected success, got error: %q", out)
 	}
@@ -88,7 +88,7 @@ func TestHandleCodexReviewIncludesStderrOnFailure(t *testing.T) {
 	r := &fakeRunner{reply: map[string]exec.Result{
 		"codex review --uncommitted": {Stdout: "partial", Stderr: "BOOM", ExitCode: 2},
 	}}
-	out, isErr := HandleCodexReview(context.Background(), cfg, r, zerolog.Nop(), repo, "uncommitted", "", "")
+	out, isErr := HandleCodexReview(context.Background(), cfg, r, zerolog.Nop(), repo, "uncommitted", "", "", "")
 	if isErr {
 		t.Fatalf("expected success (non-error tool result), got error: %q", out)
 	}

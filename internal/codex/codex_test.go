@@ -152,6 +152,32 @@ func TestReviewExtraArgs(t *testing.T) {
 	}
 }
 
+func TestReviewWithPrompt(t *testing.T) {
+	f := &fakeRunner{reply: map[string]exec.Result{
+		"codex review --uncommitted focus on error handling": {Stdout: "ok", ExitCode: 0},
+	}}
+	res, err := Review(context.Background(), f, "codex", nil, 0, 1000, nil, ReviewParams{
+		Folder: "/repo", Mode: "uncommitted", Prompt: "focus on error handling",
+	})
+	if err != nil {
+		t.Fatalf("Review with prompt: %v", err)
+	}
+	if res.Output != "ok" {
+		t.Errorf("Output = %q, want ok", res.Output)
+	}
+	if len(f.calls) != 1 {
+		t.Fatalf("expected 1 runner call, got %d", len(f.calls))
+	}
+	args := f.calls[0].Args
+	if len(args) == 0 {
+		t.Fatalf("expected non-empty args")
+	}
+	last := args[len(args)-1]
+	if last != "focus on error handling" {
+		t.Errorf("last arg = %q, want %q", last, "focus on error handling")
+	}
+}
+
 func TestReviewModeEmptyLabel(t *testing.T) {
 	f := &fakeRunner{reply: map[string]exec.Result{
 		"codex review --uncommitted": {Stdout: "fine", ExitCode: 0},

@@ -18,6 +18,9 @@ type ReviewParams struct {
 	Mode   string
 	Base   string
 	Commit string
+	// Prompt is optional custom review instructions, appended as the trailing
+	// positional PROMPT arg to `codex review`. Leave empty for a general review.
+	Prompt string
 }
 
 type ReviewResult struct {
@@ -61,6 +64,9 @@ func Review(ctx context.Context, r Runner, codexCmd string, extraArgs []string, 
 		return ReviewResult{}, err
 	}
 	args = append(args, extraArgs...)
+	if p.Prompt != "" {
+		args = append(args, p.Prompt)
+	}
 
 	res, err := r.Run(ctx, exec.Request{
 		Command:        codexCmd,

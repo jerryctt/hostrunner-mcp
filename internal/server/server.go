@@ -27,6 +27,7 @@ func New(cfg *config.Config, r codex.Runner, log zerolog.Logger) *mcpserver.MCPS
 		),
 		mcp.WithString("base", mcp.Description("Base branch or ref, required when scope=base (e.g. main)")),
 		mcp.WithString("commit", mcp.Description("Commit SHA, required when scope=commit")),
+		mcp.WithString("prompt", mcp.Description("Optional custom review instructions passed to 'codex review' (e.g. \"focus on concurrency and error handling\", \"only review the auth changes\"). Leave empty for a general review.")),
 	)
 	s.AddTool(reviewTool, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		folder, err := req.RequireString("folder")
@@ -39,6 +40,7 @@ func New(cfg *config.Config, r codex.Runner, log zerolog.Logger) *mcpserver.MCPS
 			req.GetString("scope", "uncommitted"),
 			req.GetString("base", ""),
 			req.GetString("commit", ""),
+			req.GetString("prompt", ""),
 		)
 		if isErr {
 			return mcp.NewToolResultError(out), nil
@@ -71,7 +73,7 @@ func New(cfg *config.Config, r codex.Runner, log zerolog.Logger) *mcpserver.MCPS
 	return s
 }
 
-func HandleCodexReview(ctx context.Context, cfg *config.Config, r codex.Runner, log zerolog.Logger, folder, mode, base, commit string) (string, bool) {
+func HandleCodexReview(ctx context.Context, cfg *config.Config, r codex.Runner, log zerolog.Logger, folder, mode, base, commit, prompt string) (string, bool) {
 	dir, err := cfg.ResolveAllowedDir(folder)
 	if err != nil {
 		return err.Error(), true
@@ -85,6 +87,7 @@ func HandleCodexReview(ctx context.Context, cfg *config.Config, r codex.Runner, 
 		Mode:   mode,
 		Base:   base,
 		Commit: commit,
+		Prompt: prompt,
 	})
 	if err != nil {
 		log.Info().Str("tool", "codex_review").Str("folder", dir).Str("mode", mode).Err(err).Msg("invocation")

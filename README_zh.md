@@ -203,6 +203,7 @@ stream_output: true
 | `scope` | string | 否 | `uncommitted`（預設，涵蓋已暫存、未暫存及未追蹤的變更）、`base`（與 base 分支比較）或 `commit`（特定 commit） |
 | `base` | string | 否 | 基礎分支或 ref；當 `scope=base` 時必填（例如 `main`） |
 | `commit` | string | 否 | Commit SHA；當 `scope=commit` 時必填 |
+| `prompt` | string | 否 | 選用的自訂審查指示，作為結尾位置參數傳遞給 `codex review`（例如 `"聚焦於錯誤處理"`、`"只審查 auth 相關的變更"`）。留空則執行一般性審查。 |
 
 **回傳：** 包含模式及完整 `codex review` 輸出的文字區塊。
 

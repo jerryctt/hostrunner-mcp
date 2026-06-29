@@ -204,6 +204,7 @@ Run a read-only `codex review` of changes in a host git repository. Uses the nat
 | `scope` | string | no | `uncommitted` (default — staged+unstaged+untracked), `base` (against a base branch), or `commit` (a specific commit) |
 | `base` | string | no | Base branch or ref; required when `scope=base` (e.g. `main`) |
 | `commit` | string | no | Commit SHA; required when `scope=commit` |
+| `prompt` | string | no | Optional custom review instructions passed as the trailing positional arg to `codex review` (e.g. `"focus on error handling"`, `"only review the auth changes"`). Leave empty for a general review. |
 
 **Returns:** a text block with the mode and the full `codex review` output.
 

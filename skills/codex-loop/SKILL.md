@@ -91,6 +91,20 @@ codex_review(
 )
 ```
 
+#### Optional: focused reviews with `prompt`
+
+The `prompt` parameter maps to `codex review`'s trailing positional `[PROMPT]` argument — custom instructions that focus the review. Use it when the user asks to narrow the scope (e.g. "focus on security", "review only the concurrency changes", "check error handling in foo.go"). Pass their intent as `prompt`:
+
+```
+codex_review(
+  folder = "/Users/yourname/code/myproject",
+  scope  = "uncommitted",
+  prompt = "focus on error handling and resource cleanup"
+)
+```
+
+Leave `prompt` empty or omit it entirely for a general review (the default behavior).
+
 ### Step 4 — Summarize and fix
 
 The verdict is the text under `--- Codex review ---` in the tool result. **Make the next-step decision by reading that text — not by the exit code.** `codex review` always exits 0, even when it lists problems.
