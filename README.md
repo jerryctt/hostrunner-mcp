@@ -116,11 +116,11 @@ You can override the config path with the `-config` flag or the `HOSTRUNNER_CONF
 
 > **macOS GUI apps and environment variables:** because macOS does not pass shell environment variables to GUI apps like Claude Desktop, setting `HOSTRUNNER_CONFIG` in your shell profile (`.zshrc`, `.bashrc`, etc.) has no effect when the plugin is launched from Claude Desktop. Place your config at the default path `~/.config/hostrunner/config.yaml` — the binary will find it without any environment variable.
 
-**macOS/Linux:** the bundled `bin/launch.sh` launcher downloads the matching release binary on first run and verifies it against the release `checksums.txt` before executing it. No manual binary install needed.
+**macOS/Linux:** the bundled `scripts/launch.sh` launcher downloads the matching release binary on first run and verifies it against the release `checksums.txt` before executing it. No manual binary install needed.
 
 **Windows:** the launcher is not supported on Windows. Install the binary manually (Option 2 above) and register it via `claude_desktop_config.json` as described in the "Register with Claude Desktop" section.
 
-> **Trust note:** the launcher downloads and runs a binary from GitHub Releases, checksum-verified against the release. Review the source at `bin/launch.sh` if you have concerns.
+> **Trust note:** the launcher downloads and runs a binary from GitHub Releases, checksum-verified against the release. Review the source at `scripts/launch.sh` if you have concerns.
 
 ---
 

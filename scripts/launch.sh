@@ -30,7 +30,9 @@ case "$arch" in
   *) echo "hostrunner launcher: unsupported arch '$arch'" >&2; exit 1 ;;
 esac
 
-CACHE_DIR="$PLUGIN_ROOT/bin/cache"
+# Cache outside the plugin dir: claude.ai-hosted plugins reject top-level
+# bin/ content, and the managed install dir may not be writable.
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/hostrunner"
 BIN="$CACHE_DIR/hostrunner-$VER-$os-$arch"
 
 if [ ! -x "$BIN" ]; then

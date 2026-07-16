@@ -116,11 +116,11 @@ cp examples/config.example.yaml ~/.config/hostrunner/config.yaml
 
 > **macOS GUI 應用程式與環境變數：** macOS 不會將 Shell 的環境變數傳遞給 GUI 應用程式（如 Claude Desktop），因此在 `.zshrc` 或 `.bashrc` 中設定的 `HOSTRUNNER_CONFIG` 對從 Claude Desktop 啟動的外掛程式無效。請將設定檔放在預設路徑 `~/.config/hostrunner/config.yaml`，伺服器無需任何環境變數即可找到它。
 
-**macOS/Linux：** 隨附的 `bin/launch.sh` 啟動程式會在首次執行時下載符合目前作業系統與架構的發行版執行檔，並在執行前對照發行版的 `checksums.txt` 進行校驗碼驗證。無需手動安裝執行檔。
+**macOS/Linux：** 隨附的 `scripts/launch.sh` 啟動程式會在首次執行時下載符合目前作業系統與架構的發行版執行檔，並在執行前對照發行版的 `checksums.txt` 進行校驗碼驗證。無需手動安裝執行檔。
 
 **Windows：** 啟動程式不支援 Windows。請手動安裝執行檔（方式二），並依「向 Claude Desktop 註冊」章節所述，透過 `claude_desktop_config.json` 進行設定。
 
-> **信任說明：** 啟動程式會從 GitHub Releases 下載並執行執行檔，並以發行版的校驗碼進行驗證。若有疑慮，請檢閱 `bin/launch.sh` 的原始碼。
+> **信任說明：** 啟動程式會從 GitHub Releases 下載並執行執行檔，並以發行版的校驗碼進行驗證。若有疑慮，請檢閱 `scripts/launch.sh` 的原始碼。
 
 ---
 

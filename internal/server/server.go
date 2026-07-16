@@ -25,7 +25,7 @@ const statusLongPoll = 50 * time.Second
 // still-running background review jobs (killing their codex process groups)
 // and should be called after the server stops serving.
 func New(cfg *config.Config, r codex.Runner, log zerolog.Logger) (*mcpserver.MCPServer, func()) {
-	s := mcpserver.NewMCPServer("hostrunner", "0.2.0", mcpserver.WithRecovery())
+	s := mcpserver.NewMCPServer("hostrunner", "0.2.1", mcpserver.WithRecovery())
 	jobs := newJobStore()
 
 	startTool := mcp.NewTool("codex_review_start",

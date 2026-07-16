@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "hostrunner": {
-      "command": "${CLAUDE_PLUGIN_ROOT}/bin/launch.sh",
+      "command": "${CLAUDE_PLUGIN_ROOT}/scripts/launch.sh",
       "args": []
     }
   }
