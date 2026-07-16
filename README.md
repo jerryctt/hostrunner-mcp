@@ -31,7 +31,7 @@ Local MCP server + Claude plugin for read-only Codex code reviews on your machin
 │  │  (Cowork)  │                 │  /sessions/…/mnt │   │
 │  └─────┬──────┘                 └────────┬─────────┘   │
 │        │  MCP tool call                  │             │
-│        │  codex_review(folder=/Users/…)  │             │
+│        │  codex_review_start(folder=…)   │             │
 └────────┼─────────────────────────────────┼─────────────┘
          │ stdio (MCP protocol)            │ host FS mount
          ▼                                 ▼
@@ -51,7 +51,7 @@ Local MCP server + Claude plugin for read-only Codex code reviews on your machin
 
 ## Features
 
-- **`codex_review`** — run a read-only `codex review` on your uncommitted changes, a base-branch diff, or a specific commit. `codex` computes the diff itself — no git handling on our side.
+- **`codex_review_start` / `codex_review_status`** — run a read-only `codex review` on your uncommitted changes, a base-branch diff, or a specific commit, as a **background job** on the host. `codex` computes the diff itself — no git handling on our side. The job model exists because Claude Desktop kills any single MCP tool call after ~180s, while real reviews often take longer; starting and polling are each fast calls, so the review itself can run as long as your configured `timeout`.
 - **`run_command`** — run any allowlisted CLI (e.g. `git`, `codex`) in a host folder, as an argv array (never a shell).
 - **Strict security** — command name allowlist, root-directory containment, symlink-resolved path checks, no shell ever.
 - **Configurable** — allowed roots, allowed commands, timeout, max output size, and optional extra codex flags.
@@ -153,8 +153,11 @@ allowed_roots:
 allowed_commands:
   - codex
 
-# Maximum wall-clock time for a single tool invocation.
-timeout: 180s
+# Maximum wall-clock time for a single command on the host (the codex review
+# itself, or a run_command invocation). Must include a unit (e.g. 600s, 10m) —
+# a bare number is rejected. Reviews run as background jobs, so this can be
+# comfortably larger than the MCP client's ~180s per-call limit.
+timeout: 600s
 
 # Maximum bytes returned from a single tool invocation (output is truncated with a notice).
 max_output_bytes: 200000
@@ -168,6 +171,8 @@ max_output_bytes: 200000
 # Set to false to silence it.
 stream_output: true
 ```
+
+> **Note:** the config file is read **once at server startup**. Claude Desktop spawns the server when it launches, so after editing `config.yaml` you must fully restart Claude Desktop for changes to take effect. The effective values are logged at startup to `~/Library/Logs/Claude/mcp-server-hostrunner.log` (look for the `config loaded` line — it shows the config path and the timeout actually in use).
 
 ---
 
@@ -194,9 +199,9 @@ Restart Claude Desktop after editing the config. You should see **hostrunner** a
 
 ## Available Tools
 
-### `codex_review`
+### `codex_review_start`
 
-Run a read-only `codex review` of changes in a host git repository. Uses the native `codex review` subcommand, which computes the diff itself and does not modify files. Only the `codex` CLI is required — no git handling on our side.
+Start a read-only `codex review` of changes in a host git repository, as a **background job** on the host. Returns a `job_id` immediately; poll `codex_review_status` for the result. Uses the native `codex review` subcommand, which computes the diff itself and does not modify files. Only the `codex` CLI is required — no git handling on our side.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -204,15 +209,41 @@ Run a read-only `codex review` of changes in a host git repository. Uses the nat
 | `scope` | string | no | `uncommitted` (default — staged+unstaged+untracked), `base` (against a base branch), or `commit` (a specific commit) |
 | `base` | string | no | Base branch or ref; required when `scope=base` (e.g. `main`) |
 | `commit` | string | no | Commit SHA; required when `scope=commit` |
-| `prompt` | string | no | Optional custom review instructions passed as the trailing positional arg to `codex review` (e.g. `"focus on error handling"`, `"only review the auth changes"`). Leave empty for a general review. |
+| `prompt` | string | no | Custom review instructions (e.g. `"focus on error handling"`). Only pass this for an explicitly focused review; omit for a general review. Combining `prompt` with any `scope` is safe: the codex CLI rejects scope flags alongside its positional `[PROMPT]`, so the server folds the scope into the prompt text. |
 
-**Returns:** a text block with the mode and the full `codex review` output.
+**Returns:** the `job_id`, mode, and folder.
 
 ```
-Mode: uncommitted
+Review started in the background.
+job_id: 3fa4c19e02d1
+mode: uncommitted
+folder: /Users/you/proj
+```
+
+### `codex_review_status`
+
+Fetch the status/result of a background review. Blocks up to ~50s waiting for completion (long-poll), then returns either the finished review or a `running` notice — call it again until it completes. Finished results stay retrievable for ~30 minutes.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `job_id` | string | yes | The id returned by `codex_review_start` |
+
+**Returns (finished):**
+
+```
+status: completed (job 3fa4c19e02d1, elapsed 4m12s)
+
+Mode: uncommitted (codex exit 0)
 
 --- Codex review ---
 … codex findings …
+```
+
+**Returns (still running):**
+
+```
+status: running (job 3fa4c19e02d1, elapsed 1m40s)
+The review is still in progress. Call codex_review_status again with the same job_id.
 ```
 
 ### `run_command`
@@ -239,7 +270,7 @@ exit=0 elapsed=1.23s
 
 ## Installing the Cowork Skill
 
-The repository ships a ready-made Cowork skill at `skills/codex-loop/SKILL.md`. This skill teaches Cowork how to call `codex_review` automatically after each round of edits.
+The repository ships a ready-made Cowork skill at `skills/codex-loop/SKILL.md`. This skill teaches Cowork how to run `codex_review_start` / `codex_review_status` automatically after each round of edits.
 
 To install it, copy the skill directory into your Cowork skills folder:
 
@@ -265,18 +296,17 @@ Here is a typical **edit → review → edit** session in Claude Cowork:
 
 2. **Edit files** using Cowork's Read/Write/Edit tools. For example, Cowork edits `/sessions/<id>/mnt/yourproject/src/handler.go`.
 
-3. **Trigger a codex review.** Call the `codex_review` tool with the **host** path:
+3. **Start a codex review.** Call the `codex_review_start` tool with the **host** path:
    ```
-   codex_review(
-     folder = "/Users/yourname/code/yourproject",
-     scope  = "uncommitted"
+   codex_review_start(
+     folder = "/Users/yourname/code/yourproject"
    )
    ```
-   Pass the host path — the same path you see in Finder or a terminal on your Mac — **not** the `/sessions/…` sandbox path.
+   Pass the host path — the same path you see in Finder or a terminal on your Mac — **not** the `/sessions/…` sandbox path. The tool returns a `job_id` immediately while the review runs in the background.
 
-4. **Read the findings.** The tool returns the mode and codex's review output.
+4. **Poll for the findings.** Call `codex_review_status` with the `job_id` until it returns `status: completed` with codex's review output. Each poll blocks up to ~50s, so a few calls cover a multi-minute review without ever hitting the MCP client's ~180s per-call limit.
 
-5. **Iterate.** Fix the issues Cowork found, then call `codex_review` again. Repeat until the review is clean.
+5. **Iterate.** Fix the issues Cowork found, then start a new review. Repeat until the review is clean.
 
 ---
 
@@ -287,7 +317,7 @@ Here is a typical **edit → review → edit** session in Claude Cowork:
 - **No shell.** Commands are run as argv arrays via `os/exec`. There is no `sh -c`, no glob expansion, no shell injection.
 - **Native host process, not Docker.** The server runs as a plain OS process, not inside a container. Running it in Docker would break access to the host's `codex` binary, auth tokens, and files — defeating its purpose entirely.
 - **Host paths only.** Tools only accept absolute host paths (e.g. `/Users/…`). Any path beginning with `/sessions/` is rejected with a descriptive error pointing you to the correct host path.
-- **Read-only codex.** `codex_review` uses the `codex review` subcommand, which is non-interactive and read-only — it computes the diff itself and never modifies files. No write or auto-apply flags are ever passed. The optional `codex_extra_args` config field lets you pass additional flags (e.g. model overrides) without affecting safety.
+- **Read-only codex.** `codex_review_start` uses the `codex review` subcommand, which is non-interactive and read-only — it computes the diff itself and never modifies files. No write or auto-apply flags are ever passed. The optional `codex_extra_args` config field lets you pass additional flags (e.g. model overrides) without affecting safety.
 
 ---
 

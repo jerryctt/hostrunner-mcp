@@ -46,6 +46,9 @@ func Load(path string) (*Config, error) {
 	}
 	var c Config
 	if err := yaml.Unmarshal(raw, &c); err != nil {
+		if strings.Contains(err.Error(), "time.Duration") {
+			return nil, fmt.Errorf("parse config: %w (durations need a unit, e.g. `timeout: 600s`)", err)
+		}
 		return nil, fmt.Errorf("parse config: %w", err)
 	}
 	if c.Timeout == 0 {

@@ -1,6 +1,6 @@
 {
   "name": "hostrunner",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Local MCP server + Claude plugin for read-only Codex code reviews on your machine — an edit → review → edit loop, bridging the Claude sandbox to your host codex CLI.",
   "author": { "name": "Jerry Chan", "email": "jerrycttdev@gmail.com" },
   "keywords": ["codex", "code-review", "mcp", "host", "edit-review-loop"]

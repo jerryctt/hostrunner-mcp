@@ -31,7 +31,7 @@
 │  │  (Cowork)  │              │  /sessions/…/mnt │      │
 │  └─────┬──────┘              └────────┬─────────┘      │
 │        │  MCP 工具呼叫                │                 │
-│        │  codex_review(folder=/Users/…)│               │
+│        │  codex_review_start(folder=…) │               │
 └────────┼─────────────────────────────┼─────────────────┘
          │ stdio（MCP 協定）            │ Host FS 掛載
          ▼                             ▼
@@ -51,7 +51,7 @@
 
 ## 功能特色
 
-- **`codex_review`** — 對未提交的變更、base 分支差異或特定 commit 執行唯讀的 `codex review`。`codex` 自行計算差異，本端不需處理 git。
+- **`codex_review_start` / `codex_review_status`** — 對未提交的變更、base 分支差異或特定 commit，以 Host 上的**背景工作（background job）**執行唯讀的 `codex review`。`codex` 自行計算差異，本端不需處理 git。採用 job 模式是因為 Claude Desktop 會在約 180 秒後強制中斷單次 MCP 工具呼叫，而實際審查常常超過這個時間；啟動與輪詢都是快速呼叫，審查本身則可跑滿您設定的 `timeout`。
 - **`run_command`** — 在 Host 資料夾中以 argv 陣列執行任何白名單 CLI（例如 `git`、`codex`），從不使用 shell。
 - **嚴格安全性** — 指令名稱白名單、根目錄範圍限制、符號連結解析路徑檢查、絕不使用 shell。
 - **高度可設定** — 允許的根目錄、允許的指令、逾時時間、輸出大小上限，以及選用的 codex 額外旗標。
@@ -147,13 +147,15 @@ allowed_roots:
   - /Users/yourname/code
 
 # run_command 可呼叫的 CLI 執行檔名稱。
-# codex_review 只需要 'codex'——本端不處理 git。
+# codex_review_start 只需要 'codex'——本端不處理 git。
 # 如需在 run_command 中使用其他工具（如 git、gemini），請在此新增。
 allowed_commands:
   - codex
 
-# 單次工具呼叫的最大執行時間。
-timeout: 180s
+# 單一 Host 指令的最大執行時間（codex review 本身，或一次 run_command）。
+# 必須帶單位（例如 600s、10m），純數字會被拒絕。審查以背景 job 執行，
+# 因此這個值可以放心設得比 MCP client 約 180 秒的單次呼叫上限更大。
+timeout: 600s
 
 # 單次工具呼叫回傳的最大位元組數（超出時輸出將被截斷並附上提示）。
 max_output_bytes: 200000
@@ -167,6 +169,8 @@ max_output_bytes: 200000
 # 設為 false 可關閉此功能。
 stream_output: true
 ```
+
+> **注意：** 設定檔只在**伺服器啟動時讀取一次**。Claude Desktop 啟動時才會產生伺服器行程，因此修改 `config.yaml` 後必須完全重啟 Claude Desktop 才會生效。啟動時實際生效的設定值會記錄到 `~/Library/Logs/Claude/mcp-server-hostrunner.log`（尋找 `config loaded` 那一行，會顯示設定檔路徑與實際生效的 timeout）。
 
 ---
 
@@ -193,9 +197,9 @@ stream_output: true
 
 ## 可用工具
 
-### `codex_review`
+### `codex_review_start`
 
-對 Host git 儲存庫中的變更執行唯讀的 `codex review`。使用原生的 `codex review` 子指令，由 codex 自行計算差異，不修改任何檔案。只需 `codex` CLI 即可，本端不處理 git。
+對 Host git 儲存庫中的變更啟動唯讀的 `codex review`，以 Host 上的**背景工作**執行。此呼叫會立即回傳 `job_id`；請用 `codex_review_status` 輪詢結果。使用原生的 `codex review` 子指令，由 codex 自行計算差異，不修改任何檔案。只需 `codex` CLI 即可，本端不處理 git。
 
 | 參數 | 類型 | 必填 | 說明 |
 |---|---|---|---|
@@ -203,15 +207,41 @@ stream_output: true
 | `scope` | string | 否 | `uncommitted`（預設，涵蓋已暫存、未暫存及未追蹤的變更）、`base`（與 base 分支比較）或 `commit`（特定 commit） |
 | `base` | string | 否 | 基礎分支或 ref；當 `scope=base` 時必填（例如 `main`） |
 | `commit` | string | 否 | Commit SHA；當 `scope=commit` 時必填 |
-| `prompt` | string | 否 | 選用的自訂審查指示，作為結尾位置參數傳遞給 `codex review`（例如 `"聚焦於錯誤處理"`、`"只審查 auth 相關的變更"`）。留空則執行一般性審查。 |
+| `prompt` | string | 否 | 自訂審查指示（例如 `"聚焦於錯誤處理"`）。只在使用者明確要求聚焦審查時傳入；一般審查請省略。`prompt` 可以和任何 `scope` 併用：codex CLI 不允許 scope 旗標與位置參數 `[PROMPT]` 同時出現，伺服器會自動把 scope 併入 prompt 文字。 |
 
-**回傳：** 包含模式及完整 `codex review` 輸出的文字區塊。
+**回傳：** `job_id`、模式與資料夾。
 
 ```
-Mode: uncommitted
+Review started in the background.
+job_id: 3fa4c19e02d1
+mode: uncommitted
+folder: /Users/you/proj
+```
+
+### `codex_review_status`
+
+取得背景審查的狀態／結果。每次呼叫最多阻塞約 50 秒等待完成（long-poll），然後回傳完成的審查結果或 `running` 提示——請用同一個 `job_id` 反覆呼叫直到完成。完成的結果會保留約 30 分鐘。
+
+| 參數 | 類型 | 必填 | 說明 |
+|---|---|---|---|
+| `job_id` | string | 是 | `codex_review_start` 回傳的 id |
+
+**回傳（已完成）：**
+
+```
+status: completed (job 3fa4c19e02d1, elapsed 4m12s)
+
+Mode: uncommitted (codex exit 0)
 
 --- Codex review ---
 … codex 審查結果 …
+```
+
+**回傳（執行中）：**
+
+```
+status: running (job 3fa4c19e02d1, elapsed 1m40s)
+The review is still in progress. Call codex_review_status again with the same job_id.
 ```
 
 ### `run_command`
@@ -238,7 +268,7 @@ exit=0 elapsed=1.23s
 
 ## 安裝 Cowork 技能
 
-儲存庫在 `skills/codex-loop/SKILL.md` 提供了一個現成的 Cowork 技能。此技能教導 Cowork 在每輪編輯後自動呼叫 `codex_review`。
+儲存庫在 `skills/codex-loop/SKILL.md` 提供了一個現成的 Cowork 技能。此技能教導 Cowork 在每輪編輯後自動執行 `codex_review_start` / `codex_review_status`。
 
 將技能目錄複製到您的 Cowork 技能資料夾以完成安裝：
 
@@ -264,18 +294,17 @@ cp -r skills/codex-loop ~/.config/claude/skills/
 
 2. **使用 Cowork 的 Read/Write/Edit 工具編輯檔案。** 例如，Cowork 編輯了 `/sessions/<id>/mnt/yourproject/src/handler.go`。
 
-3. **觸發 codex 審查。** 以 **Host** 路徑呼叫 `codex_review` 工具：
+3. **啟動 codex 審查。** 以 **Host** 路徑呼叫 `codex_review_start` 工具：
    ```
-   codex_review(
-     folder = "/Users/yourname/code/yourproject",
-     scope  = "uncommitted"
+   codex_review_start(
+     folder = "/Users/yourname/code/yourproject"
    )
    ```
-   請傳入 Host 路徑 — 即您在 Finder 或終端機中看到的路徑 — **而非** `/sessions/…` 沙箱路徑。
+   請傳入 Host 路徑 — 即您在 Finder 或終端機中看到的路徑 — **而非** `/sessions/…` 沙箱路徑。工具會立即回傳 `job_id`，審查在背景執行。
 
-4. **閱讀審查結果。** 工具將回傳模式及 codex 的審查意見。
+4. **輪詢審查結果。** 以 `job_id` 呼叫 `codex_review_status`，直到回傳 `status: completed` 與 codex 的審查意見。每次輪詢最多阻塞約 50 秒，因此數分鐘的審查只需幾次呼叫，永遠不會撞到 MCP client 約 180 秒的單次呼叫上限。
 
-5. **反覆迭代。** 修正 Cowork 找到的問題，再次呼叫 `codex_review`。重複此步驟直到審查通過。
+5. **反覆迭代。** 修正 Cowork 找到的問題，再啟動新的審查。重複此步驟直到審查通過。
 
 ---
 
@@ -286,7 +315,7 @@ cp -r skills/codex-loop ~/.config/claude/skills/
 - **絕不使用 Shell。** 指令以 argv 陣列透過 `os/exec` 執行，不會使用 `sh -c`，不進行 glob 展開，也不存在 shell 注入風險。
 - **原生 Host 行程，而非 Docker。** 伺服器以普通 OS 行程運行，而非在容器中。在 Docker 中運行將無法存取 Host 的 `codex` 執行檔、授權憑證和檔案，完全違背了其設計目的。
 - **僅限 Host 路徑。** 工具只接受絕對 Host 路徑（例如 `/Users/…`）。任何以 `/sessions/` 開頭的路徑都會被拒絕，並附上描述性錯誤訊息，指引您使用正確的 Host 路徑。
-- **唯讀 codex。** `codex_review` 使用 `codex review` 子指令，該指令為非互動式且唯讀——由 codex 自行計算差異，不修改任何檔案。從不傳遞寫入或自動套用的旗標。選用的 `codex_extra_args` 設定欄位可傳遞額外旗標（例如模型覆寫），不影響安全性。
+- **唯讀 codex。** `codex_review_start` 使用 `codex review` 子指令，該指令為非互動式且唯讀——由 codex 自行計算差異，不修改任何檔案。從不傳遞寫入或自動套用的旗標。選用的 `codex_extra_args` 設定欄位可傳遞額外旗標（例如模型覆寫），不影響安全性。
 
 ---
 
